@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <title>CSV2CSV Parser</title>
+    <style>
+        #button {
+            margin-top: 30px;
+            padding: 20px 50px;
+            font-size: 1.5em;
+            background-color: #000;
+            color: #fff;
+            border-style: none;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body style="text-align: center">
+    <h1>CSV2CSV Parser</h1>
+    <h2>講義コード入力（半角数字7桁）</h2>
+    <form>
+        <input id="code" type="text" required onclick="" size="10" style="text-align: center; font-size: 1.5em;">
+    </form>
+
+    <h2>授業区分選択</h2>
+    <form name="lectureType">
+        <input type="radio" name="type" value="0" checked>通常
+        <input type="radio" name="type" value="1">集中
+        <input type="radio" name="type" value="2">補講
+        <input type="radio" name="type" value="z">その他
+    </form>
+
+    <h2>開始時限選択</h2>
+    <form name="startPeriod">
+        <input type="radio" name="start" value="10" checked>1限
+        <input type="radio" name="start" value="20">2限
+        <input type="radio" name="start" value="30">3限
+        <input type="radio" name="start" value="40">4限
+        <input type="radio" name="start" value="50">5限
+        <input type="radio" name="start" value="60">6限
+        <input type="radio" name="start" value="70">7限
+        <input type="radio" name="start" value="80">8限
+        <input type="radio" name="start" value="90">9限
+        <input type="radio" name="start" value="ZZ">その他
+    </form>
+
+    <h2>終了時限選択</h2>
+    <form name="endPeriod">
+        <input type="radio" name="end" value="10" checked>1限
+        <input type="radio" name="end" value="20">2限
+        <input type="radio" name="end" value="30">3限
+        <input type="radio" name="end" value="40">4限
+        <input type="radio" name="end" value="50">5限
+        <input type="radio" name="end" value="60">6限
+        <input type="radio" name="end" value="70">7限
+        <input type="radio" name="end" value="80">8限
+        <input type="radio" name="end" value="90">9限
+        <input type="radio" name="end" value="ZZ">その他
+    </form>
+
+    <h2>変換ファイル選択(zoom_CSV)</h2>
+    <form>
+        <input type="file" id="file" required>
+    </form>
+    <form>
+        <input id="button" type="submit" value="成形する" onclick="csv2csvParse()">
+    </form>
+
+    <script language="javascript" type="text/javascript">
+        //変数定義
+        let fileInput = document.getElementById("file");
+        let fileReader = new FileReader();
+        let object = new Object();
+        let result = "年度,講義コード,時限種別,授業区分,開講日,開始時限,終了時限,学籍番号,出欠判定,出席時間,退席時間,削除フラグ";
+        let nestedArray;
+        //ファイル選択表示の関数
+        fileInput.onchange = () => {
+            let file = fileInput.files[0];
+            fileReader.readAsText(file);
+        };
+        //csv2arrayの簡易パーサー
+        const simpleParseCSV = (csv) => {
+            return csv.split("\n").map((row) => row.split(','));
+        };
+        //オブジェクトの成形関数
+        const formObj = (ary) => {
+            object.code = document.getElementById("code").value;
+            //講義種類選択の格納
+            let t = document.lectureType.type;
+            for (let i = 0; i < t.length; i++) {
+                if (t[i].checked) {
+                    object.lectureType = t[i].value;
+                    break;
+                }
+            }
+            //開始時限選択の格納
+            let s = document.startPeriod.start;
+            for (let i = 0; i < s.length; i++) {
+                if (s[i].checked) {
+                    object.start = s[i].value;
+                    break;
+                }
+            }
+            //終了時限選択の格納
+            let e = document.endPeriod.end;
+            for (let i = 0; i < e.length; i++) {
+                if (e[i].checked) {
+                    object.end = e[i].value;
+                    break;
+                }
+            }
+            //メールアドレスの格納
+            object.address = ary[1];
+            //日付と時間の格納
+            const dateAndTime = ary[2].split(" ");
+            object.date = dateAndTime[0];
+            object.time = dateAndTime[1];
+            //学籍番号と名前の格納
+            let num = ary[0].substr(-8, 8);
+            //const num = ary[0];
+            //console.log(num);
+            object.studentNum = num;
+        };
+        //ダウンロードデータの整形
+        const addResult = (obj) => {
+            result += "\n2020,";
+            result += obj.code + ",";
+            result += "1,";
+            result += obj.lectureType + ",";
+            result += obj.date + ",";
+            result += obj.start + ",";
+            result += obj.end + ",";
+            result += obj.studentNum + ",";
+            //result += obj.address + ",";
+            result += "1,";
+            result += obj.time + ":00,";
+            result += ",0";
+        };
+        //ファイルのロードと配列化
+        fileReader.onload = () => {
+            nestedArray = simpleParseCSV(fileReader.result);
+        };
+        //ファイルのダウンロードイベント関数
+        const downloadFile = () => {
+            let downLoadLink = document.createElement("a");
+            downLoadLink.download = "parsed.csv";
+            downLoadLink.href = URL.createObjectURL(new Blob([result], {
+                type: "text.plain"
+            }));
+            downLoadLink.dataset.downloadurl = ["text/plain", downLoadLink.download, downLoadLink.href].join(":");
+            downLoadLink.click();
+        };
+        //メイン関数
+        const csv2csvParse = () => {
+            for (let i = 1; i < nestedArray.length - 1; i++) {
+                let array = nestedArray[i];
+                formObj(array);
+                addResult(object);
+            }
+            console.log(result);
+            downloadFile();
+            result = "年度,講義コード,時限種別,授業区分,開講日,開始時限,終了時限,学籍番号,出欠判定,出席時間,退席時間,削除フラグ";
+        };
+    </script>
+</body>
+
+</html>
