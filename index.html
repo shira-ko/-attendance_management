@@ -75,17 +75,36 @@
         let object = new Object();
         let result = "年度,講義コード,時限種別,授業区分,開講日,開始時限,終了時限,学籍番号,出欠判定,出席時間,退席時間,削除フラグ";
         let nestedArray;
+
+
         //ファイル選択表示の関数
         fileInput.onchange = () => {
             let file = fileInput.files[0];
             fileReader.readAsText(file);
         };
+
+
         //csv2arrayの簡易パーサー
         const simpleParseCSV = (csv) => {
             return csv.split("\n").map((row) => row.split(','));
         };
+
+
         //オブジェクトの成形関数
         const formObj = (ary) => {
+            //学籍番号と名前の格納
+            let num = ary[0].substr(-8, 8);
+            //const num = ary[0];
+            //console.log(num);
+            //ここで学籍番号が数字8桁かチェックジャない場合は、次の行へ
+            object.studentNum = num;
+            //メールアドレスの格納
+            object.address = ary[1];
+            //日付と時間の格納
+            const dateAndTime = ary[2].split(" ");
+            object.date = dateAndTime[0].replace(/-/g, "/");
+            object.time = dateAndTime[1];
+            // 講義コードの格納
             object.code = document.getElementById("code").value;
             //講義種類選択の格納
             let t = document.lectureType.type;
@@ -111,18 +130,9 @@
                     break;
                 }
             }
-            //メールアドレスの格納
-            object.address = ary[1];
-            //日付と時間の格納
-            const dateAndTime = ary[2].split(" ");
-            object.date = dateAndTime[0];
-            object.time = dateAndTime[1];
-            //学籍番号と名前の格納
-            let num = ary[0].substr(-8, 8);
-            //const num = ary[0];
-            //console.log(num);
-            object.studentNum = num;
         };
+
+
         //ダウンロードデータの整形
         const addResult = (obj) => {
             result += "\n2020,";
@@ -135,13 +145,17 @@
             result += obj.studentNum + ",";
             //result += obj.address + ",";
             result += "1,";
-            result += obj.time + ":00,";
+            result += obj.time + ",";
             result += ",0";
         };
+
+
         //ファイルのロードと配列化
         fileReader.onload = () => {
             nestedArray = simpleParseCSV(fileReader.result);
         };
+
+
         //ファイルのダウンロードイベント関数
         const downloadFile = () => {
             let downLoadLink = document.createElement("a");
@@ -152,12 +166,16 @@
             downLoadLink.dataset.downloadurl = ["text/plain", downLoadLink.download, downLoadLink.href].join(":");
             downLoadLink.click();
         };
+
+
         //メイン関数
         const csv2csvParse = () => {
             for (let i = 1; i < nestedArray.length - 1; i++) {
                 let array = nestedArray[i];
                 formObj(array);
-                addResult(object);
+                if (!isNaN(object.studentNum)) {
+                    addResult(object);
+                };
             }
             console.log(result);
             downloadFile();
