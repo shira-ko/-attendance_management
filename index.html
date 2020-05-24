@@ -170,7 +170,8 @@
 
         //メイン関数
         const csv2csvParse = () => {
-            for (let i = 1; i < nestedArray.length - 1; i++) {
+            //for (let i = 1; i < nestedArray.length - 1; i++) {
+            for (let i = nestedArray.length - 2; i >= 0 ; i--) {
                 let array = nestedArray[i];
                 formObj(array);
                 if (!isNaN(object.studentNum)) {
